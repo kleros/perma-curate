@@ -14,7 +14,7 @@ const ModalOverlay = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -22,16 +22,18 @@ const ModalOverlay = styled.div`
 `
 
 const ModalContainer = styled.div`
-  background-color: #3A2154;
+  background: #000;
   border-radius: 12px;
   width: 84vw;
   max-height: 85%;
   overflow-y: auto;
   position: relative;
+  border: 1px solid #CD9DFF;
+  box-shadow: 0px 4px 8px 29px rgba(0, 0, 0, 0.25);
 
   ${landscapeStyle(
     () => css`
-      width: 43%;
+      width: 60%;
     `
   )}
 `
@@ -46,19 +48,27 @@ export const AddContainer = styled.div`
 export const AddHeader = styled.div`
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   justify-content: space-between;
-  margin-bottom: 20px;
   gap: 24px;
 `
 
-export const AddTitle = styled.h2`
+export const AddTitle = styled.div`
   margin: 0;
   margin-bottom: 4px;
+  font-size: 32px;
+  font-family: Avenir, sans-serif;
 `
 
 export const AddSubtitle = styled.div`
-  font-size: 15px;
+  font-size: 16px;
   opacity: 70%;
+`
+
+export const Divider = styled.div`
+  height: 1px;
+  width: 100%;
+  background: #CD9DFF; 
 `
 
 export const StyledGoogleFormAnchor = styled.a`
@@ -75,25 +85,41 @@ export const StyledWholeField = styled.div`
   flex-direction: column;
 `
 
+export const SubmissionButton = styled.a`
+  border-radius: 4px;
+  border: 1px solid #262626;
+  color: #CD9DFF;
+  font-family: "Avenir", sans-serif;
+  text-decoration: none;
+  align-self: center;
+  padding: 0.75rem 1rem;
+  font-size: 16px;
+
+  :hover {
+    text-decoration: underline;
+  }
+
+`
+
 export const StyledTextInput = styled.input`
   display: flex;
-  background: #525252;
   padding: 8px 12px;
   outline: none;
   border: none;
   border-radius: 12px;
   color: #fff;
   font-size: 20px;
-  font-weight: 700;
+  font-weight: 400;
+  background: rgba(255, 255, 255, 0.15);
 
   ::placeholder {
-    font-weight: 700;
+    font-weight: 400;
     color: #cd9dff;
   }
 
   ${landscapeStyle(
     () => css`
-      width: 93%;
+      width: 95%;
       padding-left: 24px;
     `
   )}
@@ -110,7 +136,7 @@ export const Buttons = styled.div`
 
 export const SubmitButton = styled.button`
   background-color: #3182ce;
-  align-self: center;
+  align-self: start;
   color: white;
   padding: 12px 24px;
   font-family: 'Oxanium', sans-serif;
@@ -137,9 +163,23 @@ export const SubmitButton = styled.button`
   )}
 `
 
+export const PayoutsContainer = styled.p`
+  display: flex;
+  gap: 24px;
+`
+
+export const ExpectedPayouts = styled.p`
+  font-family: "Avenir", sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 800;
+  align-self: center;
+  margin: 0;
+`
+
 export const ErrorMessage = styled.div`
   color: red;
-  margin-top: 10px;
+  margin-top: -10px;
   font-size: 14px;
 `
 
@@ -167,8 +207,8 @@ const AddEntryModal: React.FC = () => {
   )
 
   return (
-    <ModalOverlay>
-      <ModalContainer ref={containerRef}>
+    <ModalOverlay >
+      <ModalContainer ref={containerRef} >
         {addingItemToRegistry === 'Tags' ? (
           <AddAddressTag />
         ) : addingItemToRegistry === 'CDN' ? (

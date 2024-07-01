@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { formatEther } from 'ethers'
 import getAddressValidationIssue from 'utils/validateAddress'
 import ipfsPublish from 'utils/ipfsPublish'
 import { getIPFSPath } from 'utils/getIPFSPath'
 import { initiateTransactionToCurate } from 'utils/initiateTransactionToCurate'
-import { fetchItemCounts } from 'utils/itemCounts'
+import { FocusedRegistry, fetchItemCounts } from 'utils/itemCounts'
 import { DepositParams } from 'utils/fetchRegistryDeposits'
 import RichAddressForm, { NetworkOption } from './RichAddressForm'
 import { ClosedButtonContainer } from 'pages/Home'
@@ -19,7 +19,13 @@ import {
   StyledGoogleFormAnchor,
   StyledTextInput,
   SubmitButton,
+  ExpectedPayouts,
+  PayoutsContainer,
+  Divider,
+  SubmissionButton
 } from './index'
+import { useDebounce } from 'react-use'
+import { useSearchParams } from 'react-router-dom'
 
 const columns = [
   {
@@ -64,11 +70,21 @@ const AddAddressTag: React.FC = () => {
     label: 'Mainnet',
   })
   const [address, setAddress] = useState<string>('')
+  const [debouncedAddress, setDebouncedAddress] = useState<string>('')
+
+  useDebounce(
+    () => {
+      setDebouncedAddress(address)
+    },
+    500,
+    [address]
+  )
 
   const { isLoading: addressIssuesLoading, data: addressIssuesData } = useQuery(
     {
-      queryKey: ['addressissues', network.value + ':' + address, 'Tags', '-'],
-      queryFn: () => getAddressValidationIssue(network.value, address, 'Tags'),
+      queryKey: ['addressissues', network.value + ':' + debouncedAddress, 'Tags', '-'],
+      queryFn: () => getAddressValidationIssue(network.value, debouncedAddress, 'Tags'),
+      enabled: !!debouncedAddress,
     }
   )
 
@@ -76,6 +92,7 @@ const AddAddressTag: React.FC = () => {
   const [contractName, setContractName] = useState<string>('')
   const [publicNote, setPublicNote] = useState<string>('')
   const [website, setWebsite] = useState<string>('')
+  const [searchParams, setSearchParams] = useSearchParams()
 
   const {
     isLoading: countsLoading,
@@ -86,6 +103,12 @@ const AddAddressTag: React.FC = () => {
     queryFn: () => fetchItemCounts(),
     staleTime: Infinity,
   })
+
+  const registry: FocusedRegistry | undefined = useMemo(() => {
+    const registryLabel = searchParams.get('registry')
+    if (registryLabel === null || !countsData) return undefined
+    return countsData[registryLabel]
+  }, [searchParams, countsData])
 
   const submitAddressTag = async () => {
     const values = {
@@ -134,10 +157,19 @@ const AddAddressTag: React.FC = () => {
             </StyledGoogleFormAnchor>
           </AddSubtitle>
         </div>
+        {registry && (
+        <SubmissionButton
+              href={`https://cdn.kleros.link${registry.metadata.policyURI}`}
+              target="_blank"
+            >
+              Submission Guidelines
+        </SubmissionButton>
+        )}
         <ClosedButtonContainer>
           <CloseButton />
         </ClosedButtonContainer>
       </AddHeader>
+      <Divider />
       <RichAddressForm
         networkOption={network}
         setNetwork={setNetwork}
@@ -145,8 +177,8 @@ const AddAddressTag: React.FC = () => {
         setAddress={setAddress}
         registry="Tags"
       />
-      {addressIssuesLoading && 'Loading'}
-      {addressIssuesData && (
+      {addressIssuesLoading && 'Loading...'}
+      {addressIssuesData && !addressIssuesLoading && (
         <ErrorMessage>{addressIssuesData.message}</ErrorMessage>
       )}
       Project name
@@ -173,15 +205,20 @@ const AddAddressTag: React.FC = () => {
         value={website}
         onChange={(e) => setWebsite(e.target.value)}
       />
-      <SubmitButton disabled={submittingDisabled} onClick={submitAddressTag}>
-        Submit -{' '}
-        {countsData?.Tags?.deposits
-          ? formatEther(
+      <PayoutsContainer>
+        <SubmitButton disabled={submittingDisabled} onClick={submitAddressTag}>
+          Submit
+        </SubmitButton>
+        <ExpectedPayouts>
+          Deposit:{' '}
+          {countsData?.Tags?.deposits
+            ? formatEther(
               countsData.Tags.deposits.arbitrationCost +
-                countsData.Tags.deposits.submissionBaseDeposit
+              countsData.Tags.deposits.submissionBaseDeposit
             ) + ' xDAI'
-          : null}
-      </SubmitButton>
+            : null}{' | '}Expected Reward: $40
+        </ExpectedPayouts>
+      </PayoutsContainer>
     </AddContainer>
   )
 }

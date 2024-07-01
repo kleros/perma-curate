@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { formatEther } from 'ethers'
 import getAddressValidationIssue from 'utils/validateAddress'
 import ipfsPublish from 'utils/ipfsPublish'
 import { getIPFSPath } from 'utils/getIPFSPath'
 import { initiateTransactionToCurate } from 'utils/initiateTransactionToCurate'
-import { fetchItemCounts } from 'utils/itemCounts'
+import { FocusedRegistry, fetchItemCounts } from 'utils/itemCounts'
 import { DepositParams } from 'utils/fetchRegistryDeposits'
 import RichAddressForm, { NetworkOption } from './RichAddressForm'
 import ImageUpload from './ImageUpload'
@@ -20,7 +20,13 @@ import {
   StyledGoogleFormAnchor,
   StyledTextInput,
   SubmitButton,
+  ExpectedPayouts,
+  PayoutsContainer,
+  Divider,
+  SubmissionButton
 } from './index'
+import { useDebounce } from 'react-use'
+import { useSearchParams } from 'react-router-dom'
 
 const columns = [
   {
@@ -52,7 +58,19 @@ const AddCDN: React.FC = () => {
     label: 'Mainnet',
   })
   const [address, setAddress] = useState<string>('')
+  const [debouncedAddress, setDebouncedAddress] = useState<string>('')
   const [path, setPath] = useState<string>('')
+  const [domain, setDomain] = useState<string>('')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useDebounce(
+    () => {
+      setDebouncedAddress(address)
+    },
+    500,
+    [address]
+  )
+
   const {
     isLoading: countsLoading,
     error: countsError,
@@ -63,14 +81,19 @@ const AddCDN: React.FC = () => {
     staleTime: Infinity,
   })
 
+  const registry: FocusedRegistry | undefined = useMemo(() => {
+    const registryLabel = searchParams.get('registry')
+    if (registryLabel === null || !countsData) return undefined
+    return countsData[registryLabel]
+  }, [searchParams, countsData])
+
   const { isLoading: addressIssuesLoading, data: addressIssuesData } = useQuery(
     {
-      queryKey: ['addressissues', network.value + ':' + address, 'CDN', '-'],
-      queryFn: () => getAddressValidationIssue(network.value, address, 'CDN'),
+      queryKey: ['addressissues', network.value + ':' + debouncedAddress, 'CDN', '-'],
+      queryFn: () => getAddressValidationIssue(network.value, debouncedAddress, 'CDN'),
+      enabled: !!debouncedAddress,
     }
   )
-
-  const [domain, setDomain] = useState<string>('')
 
   const submitCDN = async () => {
     const values = {
@@ -115,10 +138,19 @@ const AddCDN: React.FC = () => {
             </StyledGoogleFormAnchor>
           </AddSubtitle>
         </div>
+        {registry && (
+        <SubmissionButton
+              href={`https://cdn.kleros.link${registry.metadata.policyURI}`}
+              target="_blank"
+            >
+              Submission Guidelines
+        </SubmissionButton>
+        )}
         <ClosedButtonContainer>
           <CloseButton />
         </ClosedButtonContainer>
       </AddHeader>
+      <Divider />
       <RichAddressForm
         networkOption={network}
         setNetwork={setNetwork}
@@ -137,15 +169,20 @@ const AddCDN: React.FC = () => {
         onChange={(e) => setDomain(e.target.value)}
       />
       <ImageUpload path={path} setPath={setPath} />
-      <SubmitButton disabled={submittingDisabled} onClick={submitCDN}>
-        Submit -{' '}
-        {countsData?.CDN?.deposits
-          ? formatEther(
-              countsData.CDN.deposits.arbitrationCost +
-                countsData.CDN.deposits.submissionBaseDeposit
+      <PayoutsContainer>
+        <SubmitButton disabled={submittingDisabled} onClick={submitCDN}>
+          Submit
+        </SubmitButton>
+        <ExpectedPayouts>
+          Deposit:{' '}
+          {countsData?.Tags?.deposits
+            ? formatEther(
+              countsData.Tags.deposits.arbitrationCost +
+              countsData.Tags.deposits.submissionBaseDeposit
             ) + ' xDAI'
-          : null}
-      </SubmitButton>
+            : null}{' | '}Expected Reward: $40
+        </ExpectedPayouts>
+      </PayoutsContainer>
     </AddContainer>
   )
 }

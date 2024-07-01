@@ -2,11 +2,13 @@ import React, { Dispatch, SetStateAction, useEffect, useState } from 'react'
 import styled from 'styled-components'
 import ipfsPublish from 'utils/ipfsPublish'
 import { getIPFSPath } from 'utils/getIPFSPath'
+import UploadIcon from 'tsx:svgs/icons/upload.svg'
 
 const StyledLabel = styled.label`
   cursor: pointer;
-  width: 100px;
-  display: inline-block;
+  width: fit-content;
+  display: flex;  
+  align-items: center;
   padding: 10px 20px;
   background-color: #855caf;
   color: white;
@@ -22,6 +24,10 @@ const StyledInput = styled.input`
   width: 0.1px;
   height: 0.1px;
   position: absolute;
+`
+
+const StyledUploadIcon = styled(UploadIcon)`
+  margin-left: 5px;
 `
 
 const ImageUpload: React.FC<{
@@ -46,7 +52,7 @@ const ImageUpload: React.FC<{
     <>
       Image
       <StyledLabel>
-        Upload Image
+        Upload Image <StyledUploadIcon />
         <StyledInput
           type="file"
           onChange={(e) => {

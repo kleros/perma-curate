@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchItems } from 'utils/fetchItems'
 import { fetchItemCounts } from 'utils/itemCounts'
 import Navbar from './Navbar'
+import RewardsPage from '../RewardsSection'
 import RegistryDetails from './RegistryDetails'
 import SubmitButton from './SubmitButton'
 import Search from './Search'
@@ -112,6 +113,11 @@ const Home: React.FC = () => {
     [searchParams]
   )
 
+  const showRewardsPage = useMemo(
+    () => searchParams.get('page') === 'rewards',
+    [searchParams]
+  )
+
   const {
     isLoading: searchLoading,
     error: searchError,
@@ -120,6 +126,7 @@ const Home: React.FC = () => {
     queryKey: ['fetch', ...searchQueryKeys],
     queryFn: () => fetchItems(searchParams),
   })
+
   const {
     isLoading: countsLoading,
     error: countsError,
@@ -158,7 +165,7 @@ const Home: React.FC = () => {
             ? countsData[registry].numberOfRegistered
             : 0) +
           (status.includes('RegistrationRequested') &&
-          disputed.includes('false')
+            disputed.includes('false')
             ? countsData[registry].numberOfRegistrationRequested
             : 0) +
           (status.includes('RegistrationRequested') && disputed.includes('true')
@@ -192,6 +199,10 @@ const Home: React.FC = () => {
 
   // If missing search params, insert defaults.
   useEffect(() => {
+    if (searchParams.get('page') === 'rewards') {
+      return
+    }
+
     const registry = searchParams.getAll('registry')
     const status = searchParams.getAll('status')
     const disputed = searchParams.getAll('disputed')
@@ -228,26 +239,32 @@ const Home: React.FC = () => {
   return (
     <Container>
       <Navbar />
-      <SearchAndRegistryDetailsAndSubmitContainer>
-        <Search />
-        <RegistryDetailsAndSubmitContainer>
-          <RegistryDetails />
-          <SubmitButton />
-        </RegistryDetailsAndSubmitContainer>
-      </SearchAndRegistryDetailsAndSubmitContainer>
-
-      <Filters />
-
-      {searchLoading || !searchData ? (
-        <LoadingItems />
+      {showRewardsPage ? (
+        <RewardsPage />
       ) : (
-        <EntriesList searchData={searchData} />
-      )}
-      <Pagination totalPages={totalPages} />
+        <>
+          <SearchAndRegistryDetailsAndSubmitContainer>
+            <Search />
+            <RegistryDetailsAndSubmitContainer>
+              <RegistryDetails />
+              <SubmitButton />
+            </RegistryDetailsAndSubmitContainer>
+          </SearchAndRegistryDetailsAndSubmitContainer>
 
-      {isDetailsModalOpen && <DetailsModal />}
-      {isRegistryDetailsModalOpen && <RegistryDetailsModal />}
-      {isAddItemOpen && <AddEntryModal />}
+          <Filters />
+
+          {searchLoading || !searchData ? (
+            <LoadingItems />
+          ) : (
+            <EntriesList searchData={searchData} />
+          )}
+          <Pagination totalPages={totalPages} />
+
+          {isDetailsModalOpen && <DetailsModal />}
+          {isRegistryDetailsModalOpen && <RegistryDetailsModal />}
+          {isAddItemOpen && <AddEntryModal />}
+        </>
+      )}
     </Container>
   )
 }
